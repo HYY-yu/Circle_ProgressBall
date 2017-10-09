@@ -2,9 +2,8 @@
 <resources>
 
     <declare-styleable name="Circle_ProgressBall">
-        <attr name="radius" format="dimension"/>
-        <attr name="progress" format="integer"/>
-
+        <attr name="circleBall_radius" format="dimension"/>
+        <attr name="circleBall_progress" format="integer"/>
 
     </declare-styleable>
 </resources>

@@ -4,21 +4,22 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
+import com.example.circleprogressball.CircleProgressBall;
+
 public class MainActivity extends AppCompatActivity {
 
-    private Circle_ProgressBall progressBall;
+    private CircleProgressBall progressBall;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test_progressball);
 
-        progressBall = (Circle_ProgressBall) findViewById(R.id.progressBall);
+        progressBall = (CircleProgressBall) findViewById(R.id.progressBall);
 
 
         TaskSomeThing taskSomeThing = new TaskSomeThing();
         taskSomeThing.execute(new Object());
-
     }
 
     public class TaskSomeThing extends AsyncTask<Object, Integer, Integer> {
@@ -26,11 +27,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Integer doInBackground(Object[] params) {
-            //do something
             while (true) {
-
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(300);
                     temp++;
                     publishProgress(temp);
                     if (temp == 100) {
@@ -51,9 +50,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            if (!progressBall.stopFlag)
+            if (!progressBall.getCancelFlag()) {
                 progressBall.setProgress(temp);
-
+            }
         }
     }
 }

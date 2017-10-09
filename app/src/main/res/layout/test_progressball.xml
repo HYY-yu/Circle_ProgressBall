@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:feng = "http://schemas.android.com/apk/res-auto"
+              xmlns:app = "http://schemas.android.com/apk/res-auto"
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:weightSum="1">
 
-    <com.app.feng.circle_progressball.Circle_ProgressBall
+    <com.example.circleprogressball.CircleProgressBall
         android:id="@+id/progressBall"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        feng:radius="60dp"
-
+        app:circle_radius="60dp"
         />
 
 </LinearLayout>

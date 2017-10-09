@@ -1,11 +1,14 @@
-package com.app.feng.circle_progressball;
+package com.example.circleprogressball.tools;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
@@ -17,8 +20,6 @@ import java.util.Random;
  * Created by feng on 2016/1/12.
  */
 public class Utils {
-    private Utils() {
-    }
 
     private static final float DENSITY = Resources.getSystem().getDisplayMetrics().density;
     private static final Canvas sCanvas = new Canvas();
@@ -28,23 +29,42 @@ public class Utils {
     }
 
     //跟据Progress的值改变颜色
+
+    /**
+     * 算法作者： hellsam
+     *
+     * @param progress
+     * @return
+     */
     public static int findColorByProgress(int progress) {
 
-        if (progress > 90 && progress <= 100) {
-            return Color.parseColor("#4DE14D");
-        } else if (progress > 80 && progress <= 90) {
-            return Color.parseColor("#CAF253");
-        } else if (progress > 60 && progress <= 80) {
-            return Color.parseColor("#E5E600");
-        } else if (progress > 40 && progress <= 60) {
-            return Color.parseColor("#FFDD57");
-        } else if (progress > 20 && progress <= 40) {
-            return Color.parseColor("#FF9957");
-        } else if (progress > 0 && progress <= 20) {
-            return Color.parseColor("#FE5758");
-        } else {
-            return Color.parseColor("#E54FA8");
+        int[] colors = new int[]{Color.parseColor("#A30008"),
+                Color.parseColor("#FFA700"),
+                Color.parseColor("#009D91")};
+
+        float percent = progress / 100f;
+
+        float[][] f = new float[colors.length][3];
+
+        for (int i = 0; i < colors.length; i++) {
+            f[i][0] = (colors[i] & 0xff0000) >> 16;
+            f[i][1] = (colors[i] & 0x00ff00) >> 8;
+            f[i][2] = (colors[i] & 0x0000ff);
         }
+
+        float[] result = new float[3];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < f.length; j++) {
+                if (f.length == 1 || percent == j / (f.length - 1f)) {
+                    result = f[j];
+                } else {
+                    if (percent > j / (f.length - 1f) && percent < (j + 1f) / (f.length - 1)) {
+                        result[i] = f[j][i] - (f[j][i] - f[j + 1][i]) * (percent - j / (f.length - 1f)) * (f.length - 1f);
+                    }
+                }
+            }
+        }
+        return Color.rgb((int) result[0], (int) result[1], (int) result[2]);
     }
 
     public static Bitmap createBitmapFromView(View view) {
@@ -88,52 +108,42 @@ public class Utils {
      * @param v
      * @return
      */
-
     public static RectF scaleRectF(RectF rect, float v) {
-        float tempwidth = rect.width() * v;
-        float tempheight = rect.height() * v;
+        float tempWidth = rect.width() * v;
+        float tempHeight = rect.height() * v;
 
-        RectF rectF = new RectF();
+        RectF outRectF = new RectF();
 
         if (v > 0 && v < 1f) {
-            rectF.left = rect.left + (rect.width() - tempwidth) / 2;
-            rectF.top = rect.top + (rect.height() - tempheight) / 2;
-            rectF.right = rectF.left + tempwidth;
-            rectF.bottom = rectF.top + tempheight;
+            outRectF.left = rect.left + (rect.width() - tempWidth) * 0.5f;
+            outRectF.top = rect.top + (rect.height() - tempHeight) * 0.5f;
+            outRectF.right = outRectF.left + tempWidth;
+            outRectF.bottom = outRectF.top + tempHeight;
         } else if (v > 1f) {
-            rectF.left = rect.left - (rect.width() - tempwidth) / 2;
-            rectF.top = rect.top - (rect.height() - tempheight) / 2;
-            rectF.right = rectF.left + tempwidth;
-            rectF.bottom = rectF.top + tempheight;
+            outRectF.left = rect.left - (tempWidth - rect.width()) * 0.5f;
+            outRectF.top = rect.top - (tempHeight - rect.height()) * 0.5f;
+            outRectF.right = outRectF.left + tempWidth;
+            outRectF.bottom = outRectF.top + tempHeight;
         } else {
-
+            //返回原Rect
+            return rect;
         }
-
-        return rectF;
+        return outRectF;
     }
 
 
     /**
      * 求两点间的距离
-     *
-     * @param b1
-     * @param b2
-     * @return
      */
-    public static float getDistance(float[] b1, float[] b2) {
-        float x = b1[0] - b2[0];
-        float y = b1[1] - b2[1];
+    public static float getDistance(final float x1, final float y1, final float x2, final float y2) {
+        float x = x1 - x2;
+        float y = y1 - y2;
         float d = x * x + y * y;
         return (float) Math.sqrt(d);
     }
 
     /**
-     * )
      * 将极坐标转换成直角坐标。
-     *
-     * @param radians
-     * @param length
-     * @return
      */
     public static float[] getVector(float radians, float length) {
         float x = (float) (Math.cos(radians) * length);
@@ -144,34 +154,30 @@ public class Utils {
     }
 
     /**
-     * 求两点间的长度
-     *
-     * @param b
-     * @return
+     * 求点到原点(0,0)的长度
      */
 
-    public static float getLength(float[] b) {
-        return (float) Math.sqrt(b[0] * b[0] + b[1] * b[1]);
+    public static float getLength(float x, float y) {
+        return getDistance(x, y, 0, 0);
     }
 
     /**
-     * 在一个rectF区域(不包括circle区域)随机生成一个点
+     * 圆形区域周围倍数大小矩形区域随机生成一个点 ,但不包括圆形区域
      *
-     * @param rectF
+     * @param circle 圆形区域
      * @return
      */
-    public static synchronized PointF getRandromPointFromRectF(RectF rectF, final RectF circle) {
+    public static PointF getRandomPoint(final Circle circle) {
         float x, y;
+        RectF rectF = Utils.scaleRectF(circle.getCircleRect(), 1.8f); // 可以生成点的区域
+
         do {
             Random random = new Random(System.currentTimeMillis());
-
-            x = rectF.left + random.nextFloat() * rectF.right;
-            y = rectF.top + random.nextFloat() * rectF.bottom;
+            x = rectF.left + random.nextInt((int) rectF.width());
+            y = rectF.top + random.nextInt((int) rectF.height());
 
         } while (circle.contains(x, y));
 
         return new PointF(x, y);
-
     }
-
 }
