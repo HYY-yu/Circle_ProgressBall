@@ -19,7 +19,7 @@ public class SmallBallFactory {
 
         smallBall.a = pointF.x;
         smallBall.b = pointF.y;
-        smallBall.r = 10;
+        smallBall.r = Utils.dp2Px(3);
 
         return smallBall;
     }

@@ -24,6 +24,12 @@ public class Utils {
     private static final float DENSITY = Resources.getSystem().getDisplayMetrics().density;
     private static final Canvas sCanvas = new Canvas();
 
+    static int[] colors = new int[]{
+            Color.parseColor("#FF9500"),
+            Color.parseColor("#FF8240"),
+            Color.parseColor("#007439")};
+
+
     public static int dp2Px(int dp) {
         return Math.round(dp * DENSITY);
     }
@@ -37,11 +43,6 @@ public class Utils {
      * @return
      */
     public static int findColorByProgress(int progress) {
-
-        int[] colors = new int[]{Color.parseColor("#A30008"),
-                Color.parseColor("#FFA700"),
-                Color.parseColor("#009D91")};
-
         float percent = progress / 100f;
 
         float[][] f = new float[colors.length][3];

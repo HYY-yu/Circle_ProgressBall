@@ -9,10 +9,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RadialGradient;
 import android.graphics.Rect;
+import android.graphics.Shader;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -28,7 +29,6 @@ import com.example.circleprogressball.tools.Utils;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -55,6 +55,7 @@ public class CircleProgressBall extends View {
     int mProgress;
 
     MoveAnimation moveAnimation;
+    ValueAnimator alphaChangeAnimation;
 
     Bitmap iconCancelButton;
 
@@ -66,6 +67,7 @@ public class CircleProgressBall extends View {
 
     Circle mainCircle;
     Circle buttonCircle;
+    private int buttonAlpha = 0;
 
     public boolean getCancelFlag() {
         return cancelFlag;
@@ -103,15 +105,34 @@ public class CircleProgressBall extends View {
                     if (iconCancelButton == null) {
                         iconCancelButton = BitmapFactory.decodeResource(getResources(), R.drawable.ic_button_cancel);
                     }
+
+                    if (alphaChangeAnimation == null) {
+                        alphaChangeAnimation = ValueAnimator.ofFloat(0f, 1f).setDuration(2000);
+                        alphaChangeAnimation.setRepeatMode(ValueAnimator.REVERSE);
+                        alphaChangeAnimation.setRepeatCount(ValueAnimator.INFINITE);
+
+                        alphaChangeAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                            @Override
+                            public void onAnimationUpdate(ValueAnimator animation) {
+                                float value = (float) animation.getAnimatedValue();
+                                buttonAlpha = (int) (10 + value* (120 - 10));
+
+                            }
+                        });
+                        alphaChangeAnimation.start();
+                    }
                 }
 //                Log.i("feng", " time" + interpolatedTime);
             } else {
                 if (buttonCircle.b > mainCircle.b) {
                     buttonCircle.b -= dis;
                 } else {
+                    if (alphaChangeAnimation != null) {
+                        alphaChangeAnimation.cancel();
+                        alphaChangeAnimation = null;
+                    }
                     return;
                 }
-
             }
             invalidate();
         }
@@ -188,14 +209,25 @@ public class CircleProgressBall extends View {
         setMeasuredDimension(w, h);
     }
 
-
     @Override
     protected void onDraw(Canvas canvas) {
         if (!cancelFlag) {
+            int findColor = Utils.findColorByProgress(mProgress);
             mPaint.setColor(Utils.findColorByProgress(mProgress));
+            Paint paint = new Paint(mPaint);
+
+            if (mProgress != 100) {
+                paint.setShader(new RadialGradient(buttonCircle.a, buttonCircle.b, buttonCircle.r,
+                        findColor,
+                        Color.argb(buttonAlpha,
+                                Color.red(findColor),
+                                Color.green(findColor),
+                                Color.blue(findColor)), Shader.TileMode.CLAMP));
+            }
 
             canvas.drawCircle(mainCircle.a, mainCircle.b, mainCircle.r, mPaint);
-            canvas.drawCircle(buttonCircle.a, buttonCircle.b, buttonCircle.r, mPaint);
+
+            canvas.drawCircle(buttonCircle.a, buttonCircle.b, buttonCircle.r, paint);
 
             if (Utils.getDistance(buttonCircle.a, buttonCircle.b, mainCircle.a, mainCircle.b)
                     > mainCircle.r - buttonCircle.r) {
@@ -316,16 +348,11 @@ public class CircleProgressBall extends View {
         float pi_2 = (float) (Math.PI / 2);
         float u1 = 0, u2 = 0;
 
-        if (distanceForTwoCircle > maxDistance) {
-            //原本的半径
-            canvas.drawCircle(ball2.a, ball2.b, ball2.r, mPaint);
-        } else {
-            if (shouldLarge) {
-                float scale2 = 1 + SCALE_RATE * (1 - distanceForTwoCircle / maxDistance);
-                radius2 *= scale2;
-                //大圆因为包含了小圆 ，半径随圆心距改变
-                canvas.drawCircle(ball2.a, ball2.b, radius2, mPaint);
-            }
+        if (distanceForTwoCircle <= maxDistance && shouldLarge) {
+            float scale2 = 1 + SCALE_RATE * (1 - distanceForTwoCircle / maxDistance);
+            radius2 *= scale2;
+            //大圆因为包含了小圆 ，半径随圆心距改变
+            canvas.drawCircle(ball2.a, ball2.b, radius2, mPaint);
         }
 
         //Log.d("Metaball_radius", "radius1:" + radius1 + ",radius2:" + radius2);
@@ -408,6 +435,7 @@ public class CircleProgressBall extends View {
 
     public void setProgress(int progress) {
         mProgress = progress;
+
         if (mProgress >= 100) {
             startAnimation();
             iconCancelButton = BitmapFactory.decodeResource(getResources(), R.drawable.ic_button_ok);
