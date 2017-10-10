@@ -17,15 +17,15 @@ progress 模式：
 ---
 可以定制一下属性：
         
-    名称|格式|介绍
-    ----|----|----
-    circle_radius| format="color"| 整个进度球的大小
-    circle_progress| format="integer" |设置进度 默认为0 范围 0 - 100
-    circle_colors" |format="reference"  |颜色列表(string-array)， 当进度球为progress模式，会跟随progress的数值进行颜色渐变，当进度球为Indeterminate模式，会根据这个列表动态渐变
-    circle_max_smallball_count" |format="integer"  |最多出现几个小球
-    circle_number_font" |format="reference"  |支持Android O 出的xml字体，可把字体设置到progress模式下的数字中
-    circle_disable_cancel_buttonh" |format="dimension" | 不显示取消按钮
-    circle_indeterminate" |format="dimension"  |indeterminate 模式
+名称|格式|介绍
+----|----|----
+circle_radius| format="color"| 整个进度球的大小
+circle_progress| format="integer" |设置进度 默认为0 范围 0 - 100
+circle_colors" |format="reference"  |颜色列表(string-array)， 当进度球为progress模式，会跟随progress的数值进行颜色渐变，当进度球为Indeterminate模式，会根据这个列表动态渐变
+circle_max_smallball_count" |format="integer"  |最多出现几个小球
+circle_number_font" |format="reference"  |支持Android O 出的xml字体，可把字体设置到progress模式下的数字中
+circle_disable_cancel_buttonh" |format="dimension" | 不显示取消按钮
+circle_indeterminate" |format="dimension"  |indeterminate 模式
     
 使用
 --- 
