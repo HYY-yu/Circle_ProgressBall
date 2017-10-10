@@ -1,5 +1,10 @@
 # Circle_ProgressBall
 
 
-自定义View   圆形进度条
-![github](https://github.com/HYY-yu/Circle_ProgressBall/blob/master/Screenshot_1482430391.png "github")
+
+ProgressBall 是一个可提示用户当前程序正忙的控件，效果图如下：
+
+
+Indeterminate 模式：
+--- 
+![github](https://github.com/HYY-yu/Circle_ProgressBall/blob/master/circle_indeterminate.gif "github")
