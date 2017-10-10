@@ -27,6 +27,18 @@ public class MainActivity extends AppCompatActivity {
         TaskSomeThing taskSomeThing = new TaskSomeThing();
         taskSomeThing.execute(new Object());
         progressBall.begin();
+
+        progressBall.setOnCircleEventListener(new CircleProgressBall.OnCircleEventListener() {
+            @Override
+            public void onCancel(int mProgress) {
+                //用户点击cancel按钮
+            }
+
+            @Override
+            public void onFinish() {
+                //完成
+            }
+        });
     }
 
     public class TaskSomeThing extends AsyncTask<Object, Integer, Integer> {
@@ -38,8 +50,8 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     Thread.sleep(300);
                     temp++;
-//                    publishProgress(temp);
-                    if (temp == 50) {
+                    publishProgress(temp);
+                    if (temp == 100) {
                         return null;
                     }
 
@@ -52,15 +64,46 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Integer integer) {
             super.onPostExecute(integer);
-            progressBall.indeterminatreModeFinish();
         }
 
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
+            //用户点击cancel按钮 不再发送progress
             if (!progressBall.getCancelFlag()) {
                 progressBall.setProgress(temp);
             }
+        }
+    }
+
+    /**
+     * Indeterminatre模式任务
+     */
+    public class TaskSomeThing2 extends AsyncTask<Object, Integer, Integer> {
+        int temp = 0;
+
+        @Override
+        protected Integer doInBackground(Object[] params) {
+            while (true) {
+                try {
+                    Thread.sleep(300);
+                    temp++;
+                    if (temp == 100) {
+                        return null;
+                    }
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    //error
+                    progressBall.error();
+                }
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            super.onPostExecute(integer);
+            progressBall.indeterminatreModeFinish();
         }
     }
 }

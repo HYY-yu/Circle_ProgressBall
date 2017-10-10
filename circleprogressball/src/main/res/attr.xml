@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <declare-styleable name="Circle_ProgressBall">
-        <attr name="circleBall_radius" format="dimension"/>
-        <attr name="circleBall_progress" format="integer"/>
-
-    </declare-styleable>
-</resources>
