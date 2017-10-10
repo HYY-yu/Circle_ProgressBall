@@ -13,7 +13,7 @@ public class BallThread extends Thread {
 
     List<Circle> balls;
 
-    final int v;
+    int v;
 
     public BallThread(Circle ball, Circle circle, List<Circle> balls) {
         //生成随机速率
@@ -26,11 +26,16 @@ public class BallThread extends Thread {
     @Override
     public void run() {
         while (true) {
-            if (Utils.getDistance(ball.a, ball.b, main.a, main.b)
-                    < main.r - ball.r) {
+            float dis = Utils.getDistance(ball.a, ball.b, main.a, main.b);
+            if (dis < main.r - ball.r) {
                 //认为已经回家
                 balls.remove(ball);
                 break;
+            }
+
+            if (dis <= main.r * 1.35f) {
+                //开始接触大圆 加速
+                v = 20;
             }
 
             if (ball.a - main.a == 0) {

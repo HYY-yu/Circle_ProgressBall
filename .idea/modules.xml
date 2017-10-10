@@ -3,8 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Circle_ProgressBall.iml" filepath="$PROJECT_DIR$/Circle_ProgressBall.iml" />
-      <module fileurl="file://$PROJECT_DIR$/Circle_ProgressBall.iml" filepath="$PROJECT_DIR$/Circle_ProgressBall.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/circleprogressball/circleprogressball.iml" filepath="$PROJECT_DIR$/circleprogressball/circleprogressball.iml" />
     </modules>

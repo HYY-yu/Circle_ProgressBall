@@ -15,11 +15,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test_progressball);
 
-        progressBall = (CircleProgressBall) findViewById(R.id.progressBall);
+        progressBall = findViewById(R.id.progressBall);
 
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         TaskSomeThing taskSomeThing = new TaskSomeThing();
         taskSomeThing.execute(new Object());
+        progressBall.begin();
     }
 
     public class TaskSomeThing extends AsyncTask<Object, Integer, Integer> {
@@ -31,8 +38,8 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     Thread.sleep(300);
                     temp++;
-                    publishProgress(temp);
-                    if (temp == 100) {
+//                    publishProgress(temp);
+                    if (temp == 50) {
                         return null;
                     }
 
@@ -45,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Integer integer) {
             super.onPostExecute(integer);
+            progressBall.indeterminatreModeFinish();
         }
 
         @Override

@@ -4,6 +4,10 @@
     <declare-styleable name="CircleProgressBall">
         <attr name="circle_radius" format="dimension"/>
         <attr name="circle_progress" format="integer"/>
-
+        <attr name="circle_colors" format="reference" />
+        <attr name="circle_max_smallball_count" format="integer"/>
+        <attr name="circle_number_font" format="reference" />
+        <attr name="circle_disable_cancel_button" format="boolean" />
+        <attr name="circle_indeterminate" format="boolean" />
     </declare-styleable>
 </resources>

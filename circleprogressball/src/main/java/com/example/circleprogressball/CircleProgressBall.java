@@ -14,12 +14,17 @@ import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.Shader;
+import android.graphics.Typeface;
 import android.support.annotation.NonNull;
+import android.support.v4.content.res.ResourcesCompat;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.view.animation.Transformation;
 
 import com.example.circleprogressball.tools.BallThread;
@@ -32,6 +37,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -40,38 +47,43 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 public class CircleProgressBall extends View {
 
-    static final int TEXT_COLOR = Color.WHITE;
-    private static final float SCALE_RATE = 0.3f;
+    private static final float SCALE_RATE = 0.3f;  //大圆变换半径范围
 
-    int mRadius; //圆的宽度，默认为100dp
+    private int mRadius; //圆的宽度，默认为100dp
 
-    int mHorizontalDistance;
-    int mTopDistance;
-    int mBottomDistance;
+    private int mHorizontalDistance;
+    private int mTopDistance;
+    private int mBottomDistance;
 
-    Paint mPaint;
-    Paint mTextPaint;
+    private Paint mPaint;
+    private Paint mTextPaint;
 
-    int mProgress;
+    private int mProgress;
 
-    MoveAnimation moveAnimation;
-    ValueAnimator alphaChangeAnimation;
+    private MoveAnimation moveAnimation;
+    private ValueAnimator alphaChangeAnimation;
 
-    Bitmap iconCancelButton;
+    private Bitmap iconCancelButton;
 
     private int[] mExpandInset = new int[2];
 
-    ExplosionAnimator explosion = null;
+    private ExplosionAnimator explosion = null;
 
-    boolean cancelFlag = false;
+    private boolean cancelFlag;
 
-    Circle mainCircle;
-    Circle buttonCircle;
-    private int buttonAlpha = 0;
+    private Circle mainCircle;
+    private Circle buttonCircle;
+    private int buttonAlpha = 255;
 
-    public boolean getCancelFlag() {
-        return cancelFlag;
-    }
+    private int[] colors;
+
+    private int maxSmallballCount = 6;
+
+    private int fontRes;
+    private boolean disableCancelButton;
+
+    private boolean mIndeterminate;
+    private Timer ballMaker;
 
     public interface OnCircleEventListener {
 
@@ -81,11 +93,25 @@ public class CircleProgressBall extends View {
 
     }
 
+    OnCircleEventListener onCircleEventListener;
+
     public void setOnCircleEventListener(OnCircleEventListener onCircleEventListener) {
         this.onCircleEventListener = onCircleEventListener;
     }
 
-    OnCircleEventListener onCircleEventListener;
+    public boolean getCancelFlag() {
+        return cancelFlag;
+    }
+
+    public void setColors(int[] colors) {
+        this.colors = colors;
+        Utils.setColors(colors);
+        invalidate();
+    }
+
+    public void setMaxSmallballCount(int maxSmallballCount) {
+        this.maxSmallballCount = maxSmallballCount;
+    }
 
     final List<Circle> smallBalls = Collections.synchronizedList(new LinkedList<Circle>());
     ThreadPoolExecutor pool;
@@ -97,41 +123,43 @@ public class CircleProgressBall extends View {
 
             float dis = tran * interpolatedTime;
 
-            if (mProgress != 100) {
-                if (buttonCircle.b < mTopDistance + mainCircle.r + tran) {
-                    buttonCircle.b += dis;
-                } else {
-                    //加载按钮中的取消图片.
-                    if (iconCancelButton == null) {
-                        iconCancelButton = BitmapFactory.decodeResource(getResources(), R.drawable.ic_button_cancel);
+            if (!disableCancelButton) {
+                if (!errorFlag && mProgress != 100) {
+                    if (buttonCircle.b < mTopDistance + mainCircle.r + tran) {
+                        buttonCircle.b += dis;
+                    } else {
+                        //加载按钮中的取消图片.
+                        if (iconCancelButton == null) {
+                            iconCancelButton = BitmapFactory.decodeResource(getResources(), R.drawable.ic_button_cancel);
+                        }
+                        //开始呼吸动画
+                        if (alphaChangeAnimation == null) {
+                            alphaChangeAnimation = ValueAnimator.ofFloat(1f, 0f).setDuration(2000);
+                            alphaChangeAnimation.setRepeatMode(ValueAnimator.REVERSE);
+                            alphaChangeAnimation.setRepeatCount(ValueAnimator.INFINITE);
+
+                            alphaChangeAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                                @Override
+                                public void onAnimationUpdate(ValueAnimator animation) {
+                                    float value = (float) animation.getAnimatedValue();
+                                    buttonAlpha = (int) (10 + value * (180 - 10));
+
+                                }
+                            });
+                            alphaChangeAnimation.start();
+                        }
                     }
-
-                    if (alphaChangeAnimation == null) {
-                        alphaChangeAnimation = ValueAnimator.ofFloat(0f, 1f).setDuration(2000);
-                        alphaChangeAnimation.setRepeatMode(ValueAnimator.REVERSE);
-                        alphaChangeAnimation.setRepeatCount(ValueAnimator.INFINITE);
-
-                        alphaChangeAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                            @Override
-                            public void onAnimationUpdate(ValueAnimator animation) {
-                                float value = (float) animation.getAnimatedValue();
-                                buttonAlpha = (int) (10 + value* (120 - 10));
-
-                            }
-                        });
-                        alphaChangeAnimation.start();
-                    }
-                }
-//                Log.i("feng", " time" + interpolatedTime);
-            } else {
-                if (buttonCircle.b > mainCircle.b) {
-                    buttonCircle.b -= dis;
                 } else {
                     if (alphaChangeAnimation != null) {
                         alphaChangeAnimation.cancel();
                         alphaChangeAnimation = null;
                     }
-                    return;
+
+                    buttonAlpha = 255;
+
+                    if (buttonCircle.b > mainCircle.b) {
+                        buttonCircle.b -= dis;
+                    }
                 }
             }
             invalidate();
@@ -157,6 +185,24 @@ public class CircleProgressBall extends View {
                 mRadius = array.getDimensionPixelOffset(attr, 100);
             } else if (attr == R.styleable.CircleProgressBall_circle_progress) {
                 mProgress = array.getInt(attr, 0);
+            } else if (attr == R.styleable.CircleProgressBall_circle_colors) {
+                int colorsId = array.getResourceId(attr, 0);
+                if (colorsId != 0) {
+                    String[] colorsString = context.getResources().getStringArray(colorsId);
+                    colors = new int[colorsString.length];
+                    for (int j = 0; j < colorsString.length; j++) {
+                        colors[j] = Color.parseColor(colorsString[j]);
+                    }
+                    setColors(colors);
+                }
+            } else if (attr == R.styleable.CircleProgressBall_circle_max_smallball_count) {
+                maxSmallballCount = array.getInt(attr, 5);
+            } else if (attr == R.styleable.CircleProgressBall_circle_number_font) {
+                fontRes = array.getResourceId(R.styleable.CircleProgressBall_circle_number_font, 0);
+            } else if (attr == R.styleable.CircleProgressBall_circle_disable_cancel_button) {
+                disableCancelButton = array.getBoolean(attr, false);
+            } else if (attr == R.styleable.CircleProgressBall_circle_indeterminate) {
+                mIndeterminate = array.getBoolean(attr, false);
             }
         }
 
@@ -177,12 +223,16 @@ public class CircleProgressBall extends View {
 
         mTextPaint = new Paint();
         mTextPaint.setAntiAlias(true);
-        mTextPaint.setColor(TEXT_COLOR);
+        mTextPaint.setColor(Color.WHITE);
         mTextPaint.setStyle(Paint.Style.FILL);
         mTextPaint.setTextSize(mRadius / 1.3f);
 
-        Arrays.fill(mExpandInset, Utils.dp2Px(32));
+        if (fontRes != 0) {
+            Typeface typeface = ResourcesCompat.getFont(getContext(), fontRes);
+            mTextPaint.setTypeface(typeface);
+        }
 
+        Arrays.fill(mExpandInset, Utils.dp2Px(32));
         cancelFlag = false;
     }
 
@@ -213,37 +263,53 @@ public class CircleProgressBall extends View {
     protected void onDraw(Canvas canvas) {
         if (!cancelFlag) {
             int findColor = Utils.findColorByProgress(mProgress);
-            mPaint.setColor(Utils.findColorByProgress(mProgress));
-            Paint paint = new Paint(mPaint);
 
-            if (mProgress != 100) {
-                paint.setShader(new RadialGradient(buttonCircle.a, buttonCircle.b, buttonCircle.r,
-                        findColor,
+            mPaint.setColor(Utils.findColorByProgress(mProgress));
+
+            if (mIndeterminate) {
+                //在大圆中心绘制RadialGradient
+                Paint paint = new Paint(mPaint);
+                paint.setShader(new RadialGradient(mainCircle.a, mainCircle.b, mainCircle.r,
                         Color.argb(buttonAlpha,
                                 Color.red(findColor),
                                 Color.green(findColor),
-                                Color.blue(findColor)), Shader.TileMode.CLAMP));
+                                Color.blue(findColor)), findColor, Shader.TileMode.CLAMP));
+                canvas.drawCircle(mainCircle.a, mainCircle.b, mainCircle.r, paint);
+            }else{
+                canvas.drawCircle(mainCircle.a, mainCircle.b, mainCircle.r, mPaint);
             }
 
-            canvas.drawCircle(mainCircle.a, mainCircle.b, mainCircle.r, mPaint);
+            if (!disableCancelButton) {
+                Paint paint = new Paint(mPaint);
 
-            canvas.drawCircle(buttonCircle.a, buttonCircle.b, buttonCircle.r, paint);
+                if (!mIndeterminate && mProgress != 100) {
+                    paint.setShader(new RadialGradient(buttonCircle.a, buttonCircle.b, buttonCircle.r,
+                            findColor,
+                            Color.argb(buttonAlpha,
+                                    Color.red(findColor),
+                                    Color.green(findColor),
+                                    Color.blue(findColor)), Shader.TileMode.CLAMP));
+                }
 
-            if (Utils.getDistance(buttonCircle.a, buttonCircle.b, mainCircle.a, mainCircle.b)
-                    > mainCircle.r - buttonCircle.r) {
-                metaball(canvas, buttonCircle, mainCircle,
-                        0.735f, 8f,
-                        mainCircle.r * 2.5f, true);
-            }
-            if (iconCancelButton != null &&
-                    Utils.getDistance(buttonCircle.a, buttonCircle.b, mainCircle.a, mainCircle.b)
-                            > mainCircle.r - buttonCircle.r) {
-                //绘制按钮中的图片
-                canvas.drawBitmap(iconCancelButton, null, Utils.scaleRectF(buttonCircle.getCircleRect(), 0.6f), mPaint);
+                canvas.drawCircle(buttonCircle.a, buttonCircle.b, buttonCircle.r, paint);
+
+                if (Utils.getDistance(buttonCircle.a, buttonCircle.b, mainCircle.a, mainCircle.b)
+                        > mainCircle.r - buttonCircle.r) {
+                    metaball(canvas, buttonCircle, mainCircle,
+                            0.735f, 8f,
+                            mainCircle.r * 2.5f, !errorFlag);
+                }
+
+                if (iconCancelButton != null &&
+                        Utils.getDistance(buttonCircle.a, buttonCircle.b, mainCircle.a, mainCircle.b)
+                                > mainCircle.r + buttonCircle.r) {
+                    //绘制按钮中的图片
+                    canvas.drawBitmap(iconCancelButton, null, Utils.scaleRectF(buttonCircle.getCircleRect(), 0.6f), mPaint);
+                }
             }
 
             //开始画小球
-            if (!smallBalls.isEmpty() && mProgress != 100) {
+            if (!errorFlag && !smallBalls.isEmpty() && mProgress != 100) {
                 synchronized (smallBalls) {
                     for (Circle oneBall : smallBalls) {
                         canvas.drawCircle(oneBall.a, oneBall.b, oneBall.r, mPaint);
@@ -258,61 +324,66 @@ public class CircleProgressBall extends View {
             }
 
             //画出圆内的字
-            String txt = String.valueOf(mProgress);
-            Paint.FontMetrics fm = mTextPaint.getFontMetrics();
-            float mTxtHeight = (int) Math.abs(fm.ascent) - fm.descent;
-            float mTxtWidth = mTextPaint.measureText(txt, 0, txt.length());
+            if (!mIndeterminate && !errorFlag) {
+                String txt = String.valueOf(mProgress);
+                Paint.FontMetrics fm = mTextPaint.getFontMetrics();
+                float mTxtHeight = (int) Math.abs(fm.ascent) - fm.descent;
+                float mTxtWidth = mTextPaint.measureText(txt, 0, txt.length());
 
-            canvas.drawText(txt,
-                    mainCircle.r - (mTxtWidth / 2) + mainCircle.getCircleRect().left,
-                    mainCircle.r + (mTxtHeight / 2) + mainCircle.getCircleRect().top,
-                    mTextPaint);
+                canvas.drawText(txt,
+                        mainCircle.r - (mTxtWidth / 2) + mainCircle.getCircleRect().left,
+                        mainCircle.r + (mTxtHeight / 2) + mainCircle.getCircleRect().top,
+                        mTextPaint);
+            }
 
         } else {
             explosion.draw(canvas);
         }
     }
 
+    float oldX;
+    float oldY;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (iconCancelButton != null) {
-                //说明加载出了icon
-                float x = event.getX();
-                float y = event.getY();
+            //说明加载出了icon
+            oldX = event.getX();
+            oldY = event.getY();
 
-                if (buttonCircle.contains(x, y) && mProgress != 100) {
-                    //粒子破碎，任务取消
-                    ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f).setDuration(200);
+            return true;
+        } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            float x = event.getX();
+            float y = event.getY();
 
-                    //先震动自己
-                    animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                        Random random = new Random();
+            if (iconCancelButton != null && mProgress != 100 && buttonCircle.contains(oldX, oldY) &&
+                    buttonCircle.contains(x, y)) {
+                //粒子破碎，任务取消
+                ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f).setDuration(200);
 
-                        @Override
-                        public void onAnimationUpdate(ValueAnimator animation) {
-                            setTranslationX((random.nextFloat() - 0.5f) * getWidth() * 0.05f);
-                            setTranslationY((random.nextFloat() - 0.5f) * getHeight() * 0.05f);
-                        }
-                    });
+                //先震动自己
+                animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    Random random = new Random();
 
-                    animator.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            //爆炸
-                            Rect r = getViewRect();
-                            explode(Utils.createBitmapFromView(CircleProgressBall.this), r,
-                                    150, ExplosionAnimator.DEFAULT_DURATION);
-                            //取消
-                            cancelFlag = true;
-                            pool.shutdownNow();
-                            if (onCircleEventListener != null) {
-                                onCircleEventListener.onCancel(mProgress);
-                            }
-                        }
-                    });
-                    animator.start();
-                }
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        setTranslationX((random.nextFloat() - 0.5f) * getWidth() * 0.05f);
+                        setTranslationY((random.nextFloat() - 0.5f) * getHeight() * 0.05f);
+                    }
+                });
+
+                animator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        //爆炸
+                        Rect r = getViewRect();
+                        explode(Utils.createBitmapFromView(CircleProgressBall.this), r,
+                                150, ExplosionAnimator.DEFAULT_DURATION);
+                        //取消
+                        cancelFlag = true;
+                    }
+                });
+                animator.start();
             }
             return true;
         }
@@ -330,11 +401,27 @@ public class CircleProgressBall extends View {
         return r;
     }
 
-    public void explode(Bitmap bitmap, Rect bound, long startDelay, long duration) {
+    private void explode(Bitmap bitmap, Rect bound, long startDelay, long duration) {
         explosion = new ExplosionAnimator(this, bitmap, bound);
         explosion.setStartDelay(startDelay);
         explosion.setDuration(duration);
         explosion.start();
+        explosion.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                stopAnimation();
+                if (mIndeterminate) {
+                    ballMaker.cancel();
+                    ballMaker = null;
+                }
+                pool.shutdownNow();
+                setVisibility(GONE);
+
+                if (onCircleEventListener != null) {
+                    onCircleEventListener.onCancel(mProgress);
+                }
+            }
+        });
     }
 
     private void metaball(Canvas canvas, Circle ball1, Circle ball2, float v, float handle_len_rate, float maxDistance, boolean shouldLarge) {
@@ -433,31 +520,119 @@ public class CircleProgressBall extends View {
         canvas.drawPath(path1, mPaint);
     }
 
+    /**
+     * 当控件处于indeterminatre模式时，若进度结束则调用  释放资源
+     */
+    public void indeterminatreModeFinish() {
+        setProgress(100);
+        ballMaker.cancel();
+        ballMaker = null;
+    }
+
+    /**
+     * 当progress为100 结束
+     *
+     * @param progress 0 - 100
+     */
     public void setProgress(int progress) {
         mProgress = progress;
 
         if (mProgress >= 100) {
-            startAnimation();
-            iconCancelButton = BitmapFactory.decodeResource(getResources(), R.drawable.ic_button_ok);
-
-            if (onCircleEventListener != null) {
-                onCircleEventListener.onFinish();
-            }
-
-            pool.shutdownNow();
+            finish();
         }
 
         //奇数就生成ball
-        if (progress > 8 && (progress % 2 != 0 || !cancelFlag)) {
+        if ((mIndeterminate || progress > 8) && (progress % 2 != 0 || !cancelFlag)) {
             makeSmallBall(mainCircle);
         }
     }
 
+    boolean errorFlag = false;
+
+    /**
+     * 任何时候调用error 说明进度有问题，马上终止，并给用户提示
+     */
+    public void error() {
+        stopAnimation();
+        startFinishAnimation();
+
+        errorFlag = true;
+    }
+
+    private void finish() {
+        stopAnimation();
+        startFinishAnimation();
+        if (iconCancelButton != null) {
+            iconCancelButton = BitmapFactory.decodeResource(getResources(), R.drawable.ic_button_ok);
+        }
+
+        if (onCircleEventListener != null) {
+            onCircleEventListener.onFinish();
+        }
+
+        pool.shutdownNow();
+    }
+
+    /**
+     * 调用此方法开始动画
+     */
+    public void begin() {
+        startAnimation();
+
+        if (mIndeterminate) {
+            ballMaker = new Timer();
+            ballMaker.schedule(new ChangeProgressTask(), 200, 100);
+        }
+    }
+
+    int change = 0;
+
+    class ChangeProgressTask extends TimerTask {
+
+        @Override
+        public void run() {
+            // 当 0 < change < 99 y 正增长 直到 99
+            // 当change >= 99 y 负增长 直到 0
+            int percent = 0;
+
+            change++;
+
+            if (change >= 99) {
+                percent = 198 - change;
+            }
+            if (change >= 0 && change < 99) {
+                percent = change;
+            }
+
+            if (change == 198) {
+                change = 0;
+            }
+
+            setProgress(percent);
+        }
+    }
+
     private void makeSmallBall(Circle circleRect) {
-        Circle smallBall = SmallBallFactory.generateSmallBall(circleRect);
-        if (!pool.isShutdown() && smallBalls.size() < 6) {
+        if (!pool.isShutdown() && smallBalls.size() < maxSmallballCount) {
+            Circle smallBall = Utils.generateSmallBall(circleRect);
             smallBalls.add(smallBall);
             pool.execute(new BallThread(smallBall, circleRect, smallBalls));
+        }
+    }
+
+    private void startFinishAnimation() {
+        moveAnimation = new MoveAnimation();
+        moveAnimation.setDuration(5000);
+
+        moveAnimation.setInterpolator(new AccelerateInterpolator());
+        moveAnimation.setFillAfter(true);
+        startAnimation(moveAnimation);
+    }
+
+    private void stopAnimation() {
+        if (moveAnimation != null) {
+            moveAnimation.cancel();
+            moveAnimation = null;
         }
     }
 
@@ -470,11 +645,5 @@ public class CircleProgressBall extends View {
         moveAnimation.setInterpolator(new DecelerateInterpolator());
         moveAnimation.setFillAfter(true);
         startAnimation(moveAnimation);
-    }
-
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        startAnimation();
     }
 }

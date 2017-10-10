@@ -29,6 +29,12 @@ public class Circle {
         return temp1 + temp2 < r * r;
     }
 
+    public boolean contains(float x, float y, float mul) {
+        float temp1 = (x - a) * (x - a);
+        float temp2 = (y - b) * (y - b);
+        return temp1 + temp2 < r * r * mul * mul;
+    }
+
     public RectF getCircleRect() {
         if (circleRect == null) {
             circleRect = new RectF();

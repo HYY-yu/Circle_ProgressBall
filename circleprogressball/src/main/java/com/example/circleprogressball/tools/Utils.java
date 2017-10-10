@@ -14,6 +14,8 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.example.circleprogressball.CircleProgressBall;
+
 import java.util.Random;
 
 /**
@@ -25,19 +27,19 @@ public class Utils {
     private static final Canvas sCanvas = new Canvas();
 
     static int[] colors = new int[]{
-            Color.parseColor("#FF9500"),
-            Color.parseColor("#FF8240"),
             Color.parseColor("#007439")};
-
 
     public static int dp2Px(int dp) {
         return Math.round(dp * DENSITY);
     }
 
-    //跟据Progress的值改变颜色
+    public static void setColors(int[] colors) {
+        Utils.colors = colors;
+    }
 
     /**
      * 算法作者： hellsam
+     * 跟据Progress的值改变颜色
      *
      * @param progress
      * @return
@@ -169,16 +171,35 @@ public class Utils {
      * @return
      */
     public static PointF getRandomPoint(final Circle circle) {
+
         float x, y;
-        RectF rectF = Utils.scaleRectF(circle.getCircleRect(), 1.8f); // 可以生成点的区域
+        RectF rectF = Utils.scaleRectF(circle.getCircleRect(), 1.9f); // 可以生成点的区域
 
         do {
             Random random = new Random(System.currentTimeMillis());
             x = rectF.left + random.nextInt((int) rectF.width());
             y = rectF.top + random.nextInt((int) rectF.height());
 
-        } while (circle.contains(x, y));
+        } while (circle.contains(x, y, 1.25f));
 
         return new PointF(x, y);
+    }
+
+    /**
+     * 生成小球
+     *
+     * @param circle
+     * @return
+     */
+    public static Circle generateSmallBall(Circle circle) {
+        Circle smallBall = new Circle();
+
+        PointF pointF = Utils.getRandomPoint(circle);
+
+        smallBall.a = pointF.x;
+        smallBall.b = pointF.y;
+        smallBall.r = Utils.dp2Px(3);
+
+        return smallBall;
     }
 }
