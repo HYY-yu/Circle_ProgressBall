@@ -40,7 +40,7 @@ circle_indeterminate" |format="dimension"  |indeterminate 模式
  ```
  
  在项目的build.gradle下:
- ```compile 'com.github.HYY-yu:TableRecyclerView:v1.0.0'```
+ ```compile 'com.github.HYY-yu:Circle_ProgressBall:1.0.0'```
  
  在xml文件中定制好属性，必须在代码中 circleprogressball.begin()开启动画。
  - 若使用 indeterminate 模式 ，请注意可以用circleprogressball.indeterminateFinish()方法告诉控件进度完成。
