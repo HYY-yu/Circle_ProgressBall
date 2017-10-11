@@ -46,4 +46,40 @@ circle_indeterminate" |format="dimension"  |indeterminate 模式
  - 若使用 indeterminate 模式 ，请注意可以用circleprogressball.indeterminateFinish()方法告诉控件进度完成。
  - 若使用 progress 模式，通过setProgress设置进度，注意进度只能为 0 - 100
  - 任何模式都可以调用 error() 方法，通知用户进度出错。
- - 见样例 
+ 
+ 示例：
+ ```java
+    progressBall.begin();
+    startTask()
+       /**
+      * Indeterminatre模式任务
+      */
+     public class Task extends AsyncTask<Object, Integer, Integer> {
+         int temp = 0;
+ 
+         @Override
+         protected Integer doInBackground(Object[] params) {
+             while (true) {
+                 try {
+                     Thread.sleep(300);
+                     temp++;
+                     if (temp == 100) {
+                         //finish
+                         return null;
+                     }
+ 
+                 } catch (InterruptedException e) {
+                     e.printStackTrace();
+                     //error
+                     progressBall.error();
+                 }
+             }
+         }
+ 
+         @Override
+         protected void onPostExecute(Integer integer) {
+             super.onPostExecute(integer);
+             progressBall.indeterminatreModeFinish();
+         }
+     }
+ ```
