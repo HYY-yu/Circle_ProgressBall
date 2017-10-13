@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -83,6 +84,8 @@ public class CircleProgressBall extends View {
     private boolean mIndeterminate;
     private Timer ballMaker;
 
+    int findColor;
+
     public interface OnCircleEventListener {
 
         void onCancel(int mProgress);
@@ -112,16 +115,15 @@ public class CircleProgressBall extends View {
     }
 
     final List<Circle> smallBalls = Collections.synchronizedList(new LinkedList<Circle>());
-    ThreadPoolExecutor pool;
+    ExecutorService pool;
 
     private class MoveAnimation extends Animation {
         @Override
         protected void applyTransformation(float interpolatedTime, Transformation t) {
-            float tran = (mBottomDistance + mainCircle.r) / 2;  // 位移的最终位置
-
-            float dis = tran * interpolatedTime;
-
             if (!disableCancelButton) {
+                float tran = (mBottomDistance + mainCircle.r) / 2;  // 位移的最终位置
+                float dis = tran * interpolatedTime;
+
                 if (!errorFlag && mProgress != 100) {
                     if (buttonCircle.b < mTopDistance + mainCircle.r + tran) {
                         buttonCircle.b += dis;
@@ -134,10 +136,7 @@ public class CircleProgressBall extends View {
                         startAlphaChangeAnimation();
                     }
                 } else {
-                    if (alphaChangeAnimation != null) {
-                        alphaChangeAnimation.cancel();
-                        alphaChangeAnimation = null;
-                    }
+                    stopAlphaChangeAnimation();
 
                     buttonAlpha = 255;
 
@@ -147,6 +146,13 @@ public class CircleProgressBall extends View {
                 }
             }
             invalidate();
+        }
+    }
+
+    private void stopAlphaChangeAnimation() {
+        if (alphaChangeAnimation != null) {
+            alphaChangeAnimation.cancel();
+            alphaChangeAnimation = null;
         }
     }
 
@@ -206,8 +212,15 @@ public class CircleProgressBall extends View {
     }
 
     private void init() {
+        iconCancelButton = null;
+        if (mIndeterminate) {
+            mProgress = 0;
+        }
+        cancelFlag = false;
+        findColor = Utils.findColorByProgress(mProgress);
+
         //构造线程池
-        pool = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        pool =  Executors.newCachedThreadPool();
 
         mainCircle = new Circle();
         buttonCircle = new Circle();
@@ -227,7 +240,6 @@ public class CircleProgressBall extends View {
         }
 
         Arrays.fill(mExpandInset, Utils.dp2Px(32));
-        cancelFlag = false;
     }
 
     @Override
@@ -263,9 +275,7 @@ public class CircleProgressBall extends View {
     }
 
     private void drawSelf(Canvas canvas) {
-        int findColor = Utils.findColorByProgress(mProgress);
-
-        mPaint.setColor(Utils.findColorByProgress(mProgress));
+        mPaint.setColor(findColor);
 
         if (mIndeterminate) {
             //在大圆中心绘制RadialGradient
@@ -281,29 +291,30 @@ public class CircleProgressBall extends View {
         }
 
         if (!disableCancelButton) {
-            Paint paint = new Paint(mPaint);
 
-            if (!mIndeterminate && mProgress != 100) {
+            if (!mIndeterminate && mProgress != 100 && buttonAlpha != 255) {
+                Paint paint = new Paint(mPaint);
                 paint.setShader(new RadialGradient(buttonCircle.a, buttonCircle.b, buttonCircle.r,
                         findColor,
                         Color.argb(buttonAlpha,
                                 Color.red(findColor),
                                 Color.green(findColor),
                                 Color.blue(findColor)), Shader.TileMode.CLAMP));
+                canvas.drawCircle(buttonCircle.a, buttonCircle.b, buttonCircle.r, paint);
+            } else {
+                canvas.drawCircle(buttonCircle.a, buttonCircle.b, buttonCircle.r, mPaint);
             }
 
-            canvas.drawCircle(buttonCircle.a, buttonCircle.b, buttonCircle.r, paint);
+            float dis = Utils.getDistance(buttonCircle.a, buttonCircle.b, mainCircle.a, mainCircle.b);
 
-            if (Utils.getDistance(buttonCircle.a, buttonCircle.b, mainCircle.a, mainCircle.b)
-                    > mainCircle.r - buttonCircle.r) {
+            if (dis > mainCircle.r - buttonCircle.r) {
                 metaball(canvas, buttonCircle, mainCircle,
                         0.735f, 8f,
-                        mainCircle.r * 2.5f, !errorFlag);
+                        mainCircle.r * 2.5f, !errorFlag, dis);
             }
 
             if (iconCancelButton != null &&
-                    Utils.getDistance(buttonCircle.a, buttonCircle.b, mainCircle.a, mainCircle.b)
-                            > mainCircle.r + buttonCircle.r) {
+                    dis > mainCircle.r + buttonCircle.r) {
                 //绘制按钮中的图片
                 canvas.drawBitmap(iconCancelButton, null, Utils.scaleRectF(buttonCircle.getCircleRect(), 0.6f), mPaint);
             }
@@ -314,11 +325,10 @@ public class CircleProgressBall extends View {
             synchronized (smallBalls) {
                 for (Circle oneBall : smallBalls) {
                     canvas.drawCircle(oneBall.a, oneBall.b, oneBall.r, mPaint);
-
-                    if (Utils.getDistance(oneBall.a, oneBall.b, mainCircle.a, mainCircle.b)
-                            > mainCircle.r - oneBall.r) {
+                    float dis = Utils.getDistance(oneBall.a, oneBall.b, mainCircle.a, mainCircle.b);
+                    if (dis > mainCircle.r - oneBall.r) {
                         metaball(canvas, oneBall, mainCircle,
-                                0.735f, 8f, mainCircle.r * 1.25f, false);
+                                0.735f, 8f, mainCircle.r * 1.25f, false, dis);
                     }
                 }
             }
@@ -421,10 +431,7 @@ public class CircleProgressBall extends View {
         });
     }
 
-    private void metaball(Canvas canvas, Circle ball1, Circle ball2, float v, float handle_len_rate, float maxDistance, boolean shouldLarge) {
-
-        //拿到两圆的距离
-        float distanceForTwoCircle = Utils.getDistance(ball1.a, ball1.b, ball2.a, ball2.b);
+    private void metaball(Canvas canvas, Circle ball1, Circle ball2, float v, float handle_len_rate, float maxDistance, boolean shouldLarge, float distanceForTwoCircle) {
 
         float radius1 = ball1.r;
         float radius2 = ball2.r;
@@ -532,17 +539,38 @@ public class CircleProgressBall extends View {
      * @param progress 0 - 100
      */
     public void setProgress(int progress) {
+        if (cancelFlag) {
+            return;
+        }
+
         mProgress = progress;
+
+        findColor = Utils.findColorByProgress(mProgress);
 
         if (mProgress >= 100) {
             finish();
             return;
         }
 
-        //奇数就生成ball
-        if ((mIndeterminate || progress > 8) && (progress % 2 != 0 || !cancelFlag)) {
-            makeSmallBall(mainCircle);
+        //若为 Progress 模式 以先加速后减速方式 生成ball
+        //若为 Indeterminate 模式 自然生成(小球总数由maxSmallBallCount控制)。
+        int ballCount = maxSmallballCount;
+
+        if (!mIndeterminate) {
+            ballCount = Utils.getBallCount(mProgress, maxSmallballCount);
         }
+
+        makeSmallBall(mainCircle, ballCount);
+    }
+
+    private void makeSmallBall(Circle circleRect, int smallBallCount) {
+        if (pool.isShutdown() || smallBalls.size() > smallBallCount) {
+            return;
+        }
+
+        Circle smallBall = Utils.generateSmallBall(circleRect);
+        smallBalls.add(smallBall);
+        pool.execute(new BallThread(smallBall, circleRect, smallBalls));
     }
 
     boolean errorFlag = false;
@@ -576,6 +604,9 @@ public class CircleProgressBall extends View {
      * 调用此方法开始动画
      */
     public void begin() {
+        requestLayout();
+        init();
+
         startAnimation();
 
         if (mIndeterminate) {
@@ -587,7 +618,6 @@ public class CircleProgressBall extends View {
     int change = 0;
 
     class ChangeProgressTask extends TimerTask {
-
         @Override
         public void run() {
             // 当 0 < change < 99 y 正增长 直到 99
@@ -610,16 +640,7 @@ public class CircleProgressBall extends View {
 
             setProgress(percent);
         }
-    }
 
-    private void makeSmallBall(Circle circleRect) {
-        if (pool.isShutdown() || smallBalls.size() > maxSmallballCount) {
-            return;
-        }
-
-        Circle smallBall = Utils.generateSmallBall(circleRect);
-        smallBalls.add(smallBall);
-        pool.execute(new BallThread(smallBall, circleRect, smallBalls));
     }
 
     private void startFinishAnimation() {

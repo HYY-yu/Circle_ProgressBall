@@ -11,6 +11,7 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -185,6 +186,14 @@ public class Utils {
         return new PointF(x, y);
     }
 
+    public static int getBallCount(int progress, int maxCount) {
+        float x = progress / 100f;
+        float a = maxCount / -0.25f;
+
+        return Math.round(a * x * (x - 1));
+
+    }
+
     /**
      * 生成小球
      *
@@ -198,7 +207,7 @@ public class Utils {
 
         smallBall.a = pointF.x;
         smallBall.b = pointF.y;
-        smallBall.r = Utils.dp2Px(4);
+        smallBall.r = 0;
 
         return smallBall;
     }
