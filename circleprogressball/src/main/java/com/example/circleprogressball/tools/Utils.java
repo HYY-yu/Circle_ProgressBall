@@ -143,7 +143,7 @@ public class Utils {
         float x = x1 - x2;
         float y = y1 - y2;
         float d = x * x + y * y;
-        return (float) Math.sqrt(d);
+        return (float) Math.abs(Math.sqrt(d));
     }
 
     /**
@@ -173,16 +173,16 @@ public class Utils {
      */
     public static PointF getRandomPoint(final Circle circle) {
 
-        float x, y;
-        RectF rectF = Utils.scaleRectF(circle.getCircleRect(), 1.9f); // 可以生成点的区域
+        float x = circle.a, y = circle.b;
+        RectF rectF = Utils.scaleRectF(circle.getCircleRect(), 2f); // 可以生成点的区域
+        if (rectF.width() != 0) {
+            do {
+                Random random = new Random(System.currentTimeMillis());
+                x = rectF.left + random.nextInt((int) rectF.width());
+                y = rectF.top + random.nextInt((int) rectF.height());
 
-        do {
-            Random random = new Random(System.currentTimeMillis());
-            x = rectF.left + random.nextInt((int) rectF.width());
-            y = rectF.top + random.nextInt((int) rectF.height());
-
-        } while (circle.contains(x, y, 1.25f));
-
+            } while (circle.contains(x, y, 1.45f));
+        }
         return new PointF(x, y);
     }
 

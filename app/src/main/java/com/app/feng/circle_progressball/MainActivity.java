@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        new TaskSomeThing().execute(new Object());
+        new TaskSomeThing2().execute(new Object());
         progressBall.begin();
 
         progressBall.setOnCircleEventListener(new CircleProgressBall.OnCircleEventListener() {
@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         protected Integer doInBackground(Object[] params) {
             while (true) {
                 try {
-                    Thread.sleep(300);
+                    Thread.sleep(600);
                     temp++;
                     if (temp == 100) {
                         return null;

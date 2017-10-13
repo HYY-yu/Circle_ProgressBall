@@ -22,7 +22,7 @@ public class BallThread extends Thread {
 
     public BallThread(Circle ball, Circle circle, List<Circle> balls) {
         //生成随机速率
-        v = 30 + new Random(System.currentTimeMillis()).nextInt(60);
+        v = 50 + new Random(System.currentTimeMillis()).nextInt(50);
         this.ball = ball;
         this.main = circle;
         this.balls = balls;
@@ -51,24 +51,28 @@ public class BallThread extends Thread {
                     break;
                 }
 
-                if (dis <= main.r * 1.35f) {
+                if (dis < main.r * 1.35f) {
                     //开始接触大圆 加速
-                    v = 20;
+                    v = 30;
                 }
 
-                if (ball.a - main.a == 0) {
+                float dx = Math.abs(ball.a - main.a);
+                float beta = dx / v;
+
+                if (dx == 0) {
                     //只需要不断 减少 ball.b 和 main.b 的差距
-                    ball.b = ball.b > main.b ? ball.b - 1 : ball.b + 1;
-                } else if (ball.b - main.b == 0) {
-                    ball.a = ball.a > main.a ? ball.a - 1 : ball.a + 1;
+                    ball.b = ball.b > main.b ? ball.b - beta : ball.b + beta;
+                } else if (Math.abs(ball.b - main.b) < 0.001) {
+                    ball.a = ball.a > main.a ? ball.a - beta : ball.a + beta;
                 } else {
                     float k = (main.b - ball.b) / (main.a - ball.a);
                     float oldA = ball.a;
-                    ball.a = ball.a > main.a ? ball.a - 1 : ball.a + 1;
+                    ball.a = ball.a > main.a ? ball.a - beta : ball.a + beta;
                     ball.b = k * (ball.a - oldA) + ball.b;
                 }
+
                 try {
-                    sleep(v);
+                    sleep(40);
                 } catch (InterruptedException e) {
                 }
             }

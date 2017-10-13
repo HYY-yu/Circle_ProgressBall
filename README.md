@@ -83,3 +83,7 @@ circle_indeterminate" |format="dimension"  |indeterminate 模式
          }
      }
  ```
+v 1.1.0
+---
+ 1、修改小球出现的方式，更加自然。
+ 2、Progress模式下，小球出现的次数先多后少（抛物线形式）

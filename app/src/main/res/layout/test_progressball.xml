@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         app:circle_radius="60dp"
         app:circle_colors="@array/colors"
-        app:circle_indeterminate="false"
+        app:circle_indeterminate="true"
         />
 
 </LinearLayout>
