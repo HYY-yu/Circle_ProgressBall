@@ -198,7 +198,7 @@ public class Utils {
 
         smallBall.a = pointF.x;
         smallBall.b = pointF.y;
-        smallBall.r = Utils.dp2Px(3);
+        smallBall.r = Utils.dp2Px(4);
 
         return smallBall;
     }

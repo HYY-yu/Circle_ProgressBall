@@ -17,15 +17,13 @@ public class MainActivity extends AppCompatActivity {
 
         progressBall = findViewById(R.id.progressBall);
 
-
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        TaskSomeThing taskSomeThing = new TaskSomeThing();
-        taskSomeThing.execute(new Object());
+        new TaskSomeThing().execute(new Object());
         progressBall.begin();
 
         progressBall.setOnCircleEventListener(new CircleProgressBall.OnCircleEventListener() {
