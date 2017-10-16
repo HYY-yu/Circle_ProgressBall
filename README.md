@@ -1,8 +1,8 @@
 # Circle_ProgressBall
 
 [![](https://jitpack.io/v/HYY-yu/Circle_ProgressBall.svg)](https://jitpack.io/#HYY-yu/Circle_ProgressBall)
-
-ProgressBall 是一个可提示用户当前程序正忙的控件，效果图如下：
+![](https://travis-ci.org/HYY-yu/Circle_ProgressBall.svg?branch=master)
+#### ProgressBall 是一个可提示用户当前程序正忙的控件，效果图如下：
 
 
 Indeterminate 模式：
@@ -15,7 +15,7 @@ progress 模式：
 
 自定义
 ---
-可以定制一下属性：
+可以定制以下属性：
         
 名称|格式|介绍
 ----|----|----
