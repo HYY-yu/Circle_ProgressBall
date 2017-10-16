@@ -5,6 +5,7 @@ android:
     - android-26
     - extra-android-m2repository
     - extra-android-support
+    
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
 cache:
@@ -12,9 +13,5 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
-作者：花开堪折枝
-链接：http://www.jianshu.com/p/2935b96d3059
-來源：简书
-著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
 script:
   - ./gradlew build
